@@ -68,8 +68,8 @@ filter=$(echo "$filter" | awk 'NR > 1 {printf "ether src %s or ", prev} {prev = 
 
 # compile the filter and output it to a file
 echo "Compiling the filter and outputting to file..."
-tcpdump -s 1024 -y IEEE802_11_RADIO "$(echo "$filter")" -ddd > ${file%.*}.bpf
+tcpdump -s 1024 -y IEEE802_11_RADIO "$(echo "$filter")" -ddd > ${file%.*}.bcf
 
 # exit message
 echo
-echo "Done! Filter outputted to ${file%.*}.bpf"
+echo "Done! Filter outputted to ${file%.*}.bcf"
