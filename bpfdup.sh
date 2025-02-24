@@ -2,6 +2,8 @@
 
 # TODO:
 # make it so that if the capture file has channels / frequency data for each AP in scope, it adds frequency restrictions to the filter
+# use fzf to select 1 or multiple essids
+# add support for multiple essids
 
 # do I need all these variables? probably not
 debug_mode=0
