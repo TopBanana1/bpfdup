@@ -1,15 +1,16 @@
 #!/bin/bash
 
-# TODO: make it filter only on relevant channels
+# TODO:
+# make it so that if the capture file has channels / frequency data for each AP in scope, it adds frequency restrictions to the filter
 
-# initialise variables
+# do I need all these variables? probably not
 debug_mode=0
 file=""
 essid=""
 hexessid=""
 filter=""
 
-# help function
+# I dont want anyone to think im capable/caring enough to write a help function. this was chatgpt.
 show_help() { 
   echo "Usage: $0 -f <file> -e <essid> [-d] [-h]"
   echo
@@ -21,7 +22,6 @@ show_help() {
   exit 0
 }
 
-# get command line arguments / display help
 while getopts "f:e:dh" opt; do
   case $opt in
     f) file="$OPTARG" ;;  # Assign file from -f
@@ -35,7 +35,6 @@ while getopts "f:e:dh" opt; do
   esac
 done
 
-# Check if required options are provided
 if [[ -z "$file" || -z "$essid" ]]; then
     echo "Error: Both -f <file> and -e <essid> are required."
     echo "Usage: $0 -f <file> -e <essid>"
@@ -43,33 +42,31 @@ if [[ -z "$file" || -z "$essid" ]]; then
     exit 1
 fi
 
-# Debug mode: print debug information if enabled
+# this is what Linux mastery looks like
 if [[ $debug_mode -eq 1 ]]; then
     echo "Debug Mode Enabled"
 	echo
     set -o xtrace
 fi
 
-# use tshark to filter out bssid and essid from the beacon packets in a capture file
+# get the beacon packets from capture file and filter out a list of bssid and essid
 echo "Filtering broadcast packets..."
 filter=$(tshark -r telstra-01.cap -Y "wlan.fc.type_subtype == 0x08" -T fields -e wlan.bssid -e wlan.ssid)
 
-# convert the essid to hex and remove the null byte at the end
+# so it turns out tshark pulls out hex values so we either unhex all essid and compare to input or we give up and join them in using hex. also xxd adds null byte at the end that we dont want so sed that off
 echo "Converting ESSID to HEX..."
 hexessid=$(echo "$essid" | xxd -p | sed 's/..$//')
 
-# filter out the APs associated with the target BSSID
 echo "Filtering packets containing target ESSID..."
 filter=$(echo "$filter" | grep $hexessid)
 
-# convert the list of BSSIDs to BPF format
+# ok so we have to use wlan addr3 because wlan addr3 is the router's bssid which is obviously way different from addr2 which is the router's mac address. I love networking
 echo "Converting to BPF plaintext format..."
-filter=$(echo "$filter" | awk 'NR > 1 {printf "ether src %s or ", prev} {prev = $1} END {printf "ether src %s\n", prev}')
+filter=$(echo "$filter" | awk 'NR > 1 {printf "wlan addr3 %s or ", prev} {prev = $1} END {printf "wlan addr3 %s\n", prev}')
 
-# compile the filter and output it to a file
+# we dont need the whole packet, 1024 is double of what would be considered more than enough. if your nic is bad make it 512
 echo "Compiling the filter and outputting to file..."
 tcpdump -s 1024 -y IEEE802_11_RADIO "$(echo "$filter")" -ddd > ${file%.*}.bcf
 
-# exit message
 echo
 echo "Done! Filter outputted to ${file%.*}.bcf"
