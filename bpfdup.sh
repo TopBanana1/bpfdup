@@ -53,7 +53,7 @@ fi
 
 # get the beacon packets from capture file and filter out a list of bssid and essid
 echo "Filtering broadcast packets..."
-filter=$(tshark -r telstra-01.cap -Y "wlan.fc.type_subtype == 0x08" -T fields -e wlan.bssid -e wlan.ssid)
+filter=$(tshark -r "$file" -Y "wlan.fc.type_subtype == 0x08" -T fields -e wlan.bssid -e wlan.ssid)
 
 # so it turns out tshark pulls out hex values so we either unhex all essid and compare to input or we give up and join them in using hex. also xxd adds null byte at the end that we dont want so sed that off
 echo "Converting ESSID to HEX..."
