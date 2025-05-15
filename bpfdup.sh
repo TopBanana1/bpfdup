@@ -47,7 +47,7 @@ fi
 # this is what Linux mastery looks like
 if [[ $debug_mode -eq 1 ]]; then
     echo "Debug Mode Enabled"
-	echo
+        echo
     set -o xtrace
 fi
 
@@ -60,7 +60,7 @@ echo "Converting ESSID to HEX..."
 hexessid=$(echo "$essid" | xxd -p | sed 's/..$//')
 
 echo "Filtering packets containing target ESSID..."
-filter=$(echo "$filter" | grep $hexessid)
+filter=$(echo "$filter" | grep "$hexessid")
 
 # ok so we have to use wlan addr3 because wlan addr3 is the router's bssid which is obviously way different from addr2 which is the router's mac address. I love networking
 echo "Converting to BPF plaintext format..."
@@ -72,3 +72,13 @@ tcpdump -s 1024 -y IEEE802_11_RADIO "$(echo "$filter")" -ddd > ${file%.*}.bcf
 
 echo
 echo "Done! Filter outputted to ${file%.*}.bcf"
+
+
+echo
+freqs=$(tshark -r "$file" -Y "wlan.fc.type_subtype == 0x08 && wlan.ssid == \"$essid\"" -T fields -e radiotap.channel.freq 2>/dev/null | sort -n | uniq | paste -sd, -)
+if [[ -n "$freqs" ]]; then
+echo "Bonus Points! You captured channel frequencies."
+  echo "Frequencies observed for '$essid': $freqs"
+else
+  echo "No frequency info found for '$essid' :("
+fi
