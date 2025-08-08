@@ -5,14 +5,12 @@
 # use fzf to select 1 or multiple essids
 # add support for multiple essids
 
-# do I need all these variables? probably not
 debug_mode=0
 file=""
 essid=""
 hexessid=""
 filter=""
 
-# I dont want anyone to think im capable/caring enough to write a help function. this was chatgpt.
 show_help() { 
   echo "Usage: $0 -f <file> -e <essid> [-d] [-h]"
   echo
@@ -62,7 +60,6 @@ hexessid=$(echo "$essid" | xxd -p | sed 's/..$//')
 echo "Filtering packets containing target ESSID..."
 filter=$(echo "$filter" | grep "$hexessid")
 
-# ok so we have to use wlan addr3 because wlan addr3 is the router's bssid which is obviously way different from addr2 which is the router's mac address. I love networking
 echo "Converting to BPF plaintext format..."
 filter=$(echo "$filter" | awk 'NR > 1 {printf "wlan addr3 %s or ", prev} {prev = $1} END {printf "wlan addr3 %s\n", prev}')
 
